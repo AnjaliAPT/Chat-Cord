@@ -1,0 +1,190 @@
+{% extends 'layout.html' %}
+
+{% block styles %}
+
+{% endblock styles %}
+
+{% block body %}
+
+  <div class="chat-container">
+    <header class="chat-header">
+      <a href="{{ url_for('index') }}" style="color:#fff;"><h1><i class="fas fa-smile"></i> Flack</h1></a>
+      <button class="btn" onclick="leave_room_call()">Leave Room</button>
+    </header>
+    <main class="chat-main">
+      <div class="chat-sidebar">
+        <h3><i class="fas fa-comments"></i> Room Name</h3>
+        <h2 id="room-name">{{ room }}</h2>
+        <h3><i class="fas fa-user-circle-o"></i>User</h3>
+        <h2 id="user-name">{{ username }}</h2>
+        <h3><i class="fas fa-users"></i> Active Members</h3>
+        <ul id="users">
+  
+        </ul>
+      </div>
+      <div class="chat-messages" id="chats">
+      </div>
+    </main>
+    <div class="chat-form-container">
+      <form id="chat-form">
+        <input
+          id="msg"
+          type="text"
+          placeholder="Enter Message"
+          required
+          autocomplete="off"
+        />
+        <button class="btn"><i class="fas fa-paper-plane"></i> Send</button>
+      </form>
+    </div>
+  </div>
+
+
+{% endblock body %}
+
+{% block javascript %}
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js" integrity="sha256-ZsWP0vT+akWmvEMkNYgZrPHKU9Ke8nYBPC3dqONp1mY=" crossorigin="anonymous"></script>
+
+  <script>
+
+
+
+      const socket = io.connect("http://127.0.0.1:5000/");
+
+      socket.on("connect", function () {
+        if({{newroom}} == 0)
+        {
+          socket.emit("join_room", {
+            username: "{{username}}",
+            room: "{{room}}",
+          });
+        }
+        else
+        {
+            socket.emit("new_room", {
+            username: "{{username}}",
+            room: "{{room}}",
+          });
+        }
+
+
+
+        let chat_form = document.getElementById('chat-form');
+        let msg = document.getElementById('msg');
+
+        chat_form.onsubmit = function(e){
+          e.preventDefault();
+          let message = msg.value.trim();
+          if(message.length > 0){
+              socket.emit('send_message', {
+                username: "{{ username }}",
+                room: "{{ room }}",
+                message: message
+              })
+          }
+          msg.value = "";
+          msg.focus();
+        }
+      });
+
+    function leave_room_call() {
+        socket.emit('leave_room', {
+            username: "{{ username }}",
+            room: "{{ room }}"
+        })
+    };
+
+      socket.on('join_room_announcement', function(data){
+
+        localStorage.setItem('username', data.username);
+        localStorage.setItem('room', data.room)
+
+        const message_div = document.createElement("div");
+        message_div.classList.add("message");
+        const text_p = document.createElement("p");
+        text_p.classList.add("text");
+        text_p.classList.add("info");
+        text_p.innerHTML = `<i class="fa fa-info-circle" aria-hidden="true"></i> &nbsp;${data.username} has joined the room`;
+        const parent_div = document.getElementById('chats');
+        message_div.appendChild(text_p);
+        parent_div.appendChild(message_div);
+      });
+
+      
+      socket.on('new_room_announcement', function(data){
+
+        localStorage.setItem('username', data.username);
+        localStorage.setItem('room', data.room)
+
+        const message_div = document.createElement("div");
+        message_div.classList.add("message");
+        const text_p = document.createElement("p");
+        text_p.classList.add("text");
+        text_p.classList.add("info");
+        text_p.innerHTML = `<i class="fa fa-plus" aria-hidden="true"></i> &nbsp;${data.username} has created new room ${data.room}`;
+        const parent_div = document.getElementById('chats');
+        message_div.appendChild(text_p);
+        parent_div.appendChild(message_div);
+      });
+
+    
+      socket.on('receive_message', function(data){
+        //console.log(data);
+        const message_div = document.createElement("div");
+        message_div.classList.add("message");
+        const text_p = document.createElement("p");
+        text_p.classList.add("text");
+        text_p.innerHTML = `${data.message}`;
+        const meta_p  =  document.createElement("p");
+        meta_p.classList.add("meta");
+        const time_span =  document.createElement("span");
+        time_span.innerHTML = moment().format('h:mm A, dddd');
+        meta_p.innerHTML = `${data.username}&nbsp;&nbsp;`;
+        meta_p.appendChild(time_span);
+        const parent_div = document.getElementById('chats');
+        message_div.appendChild(meta_p);
+        message_div.appendChild(text_p);
+        parent_div.appendChild(message_div);
+      });
+
+
+      socket.on('leave_room_announcement', function (data) {
+        //console.log(data);
+        
+        localStorage.removeItem("room")
+
+        const message_div = document.createElement("div");
+        message_div.classList.add("message");
+        const text_p = document.createElement("p");
+        text_p.classList.add("text");
+        text_p.classList.add("info");
+        text_p.innerHTML = `<i class="fa fa-ban" aria-hidden="true"></i> &nbsp;${data.username} has left the room`;
+        const parent_div = document.getElementById('chats');
+        message_div.appendChild(text_p);
+        parent_div.appendChild(message_div);
+        window.location.href="/";
+    });
+
+    socket.on('users_announcement', function (data) {
+      //console.log(data);
+      const users = document.getElementById('users');
+      
+      for(i = 0; i < data.length; i++)
+      {
+        let new_li = document.createElement("li");
+        if(data[i] != 'No one')
+        {
+            new_li.innerHTML = `${data[i]}`;
+            users.appendChild(new_li);
+        }
+      } 
+       
+    });
+
+
+  </script>
+
+
+{% endblock javascript %}
+

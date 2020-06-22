@@ -1,0 +1,17 @@
+arrow==0.15.7
+click==7.1.2
+dateparser==0.7.6
+Flask==1.1.2
+Flask-SocketIO==4.3.0
+itsdangerous==1.1.0
+Jinja2==2.11.2
+MarkupSafe==1.1.1
+python-dateutil==2.8.1
+python-engineio==3.13.0
+python-socketio==4.6.0
+pytz==2020.1
+regex==2020.6.8
+six==1.15.0
+times==0.7
+tzlocal==2.1
+Werkzeug==1.0.1
